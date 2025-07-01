@@ -1,0 +1,405 @@
+
+
+
+Private Sub シート削除_Click()
+
+'■■■■■■■■■　シート削除　■■■■■■■■■■
+On Error GoTo QQ
+ Sheets("防除集計表").Delete
+ Sheets("引受面積一覧").Delete
+QQ:
+
+
+End Sub
+
+
+Private Sub 表示_Click() 'クエリ1表示
+ With Sheets("クエリ1")
+   Sheets("クエリ1").Unprotect
+   On Error GoTo XX
+   .Columns(1).Hidden = False
+   .Columns(4).Hidden = False
+   .Columns(5).Hidden = False
+   .Columns(6).Hidden = False
+   .Columns(11).Hidden = False
+   .Columns(12).Hidden = False
+   .Columns(13).Hidden = False
+XX:
+.Select
+
+
+End With
+
+End Sub
+
+Private Sub 防除集計ボタン_click()
+
+Dim N As Long '最終行（整数）の定義
+Dim S As Integer '罫線の行指定
+   Dim NewWS As Worksheet   'ワークシートオブジェクトの定義
+   Dim rw As Integer        'syukeiから行コピーを実行する際の行変数
+   Dim hmrw As Integer       '引受面積シートの行変数
+   Dim bi As Integer '防除集計表データ行の数値
+   Dim ha As Long  '面積
+   Dim mny As Long '金額
+   Dim tanak As Integer
+
+'If Sheets("クエリ1").ProtectContents = True Then
+'   Sheets("クエリ1").ProtectContents = False
+'   End If
+If Sheets("クエリ1").Columns.Hidden = True Then
+'    Sheets("クエリ1").Columns.Hidden = False
+MsgBox "①-1でクエリ1シートを再表示し、再度処理してください"
+GoTo AZ
+  End If
+
+
+
+'■■■■■■■■■　引受面積抽出　& 別シートへ抽出データコピー　■■■■■■■■■■
+
+   Sheets("クエリ1").Select
+   With Sheets("クエリ1")
+
+   N = .Cells(Rows.Count, 1).End(xlUp).row  '変数Ｎ・・・最終行の数値を格納
+
+   .Range("J1").Select '引受面積選択　cells(1,10).select
+   Selection.AutoFilter  '引受面積が0以外のものを抽出
+   .Cells(Rows.Count, Columns.Count).AutoFilter Field:=10, Criteria1:=">0", Operator:=xlFilterValues
+   .Rows("1:" & N).Select              '引受面積が0以外の抽出データを選択
+   Selection.Copy                      '抽出データのコピー
+   ActiveSheet.AutoFilterMode = False  'オートフィルタ―終了
+
+   Sheets.Add                                       'シート追加
+   ActiveSheet.Name = "引受面積一覧"                'シート名変更
+   Sheets("引受面積一覧").Rows("1:1").Select        '貼付位置の選択
+   ActiveSheet.Paste                                '抽出データのペースト
+   Sheets("引受面積一覧").Columns(14).Delete        '不要列の削除
+       Sheets("引受面積一覧").Range("A1").Select
+       Application.CutCopyMode = False              'コピーペースト終了
+   Sheets("引受面積一覧").Columns.EntireColumn.AutoFit '自動で列幅を文字幅に合わせる
+
+    罫線  'Sub罫線()に飛ぶ
+    防除集計表作成
+    防除集計表データ抽出
+AZ:
+   End With
+End Sub
+
+
+'■■■■■■■■■■■■　引受面積に罫線作成　■■■■■■■■■■■■■■■
+
+Sub 罫線()
+
+
+With Sheets("引受面積一覧")  '文字の入っている行に罫線を引く
+
+   N = .Cells(Rows.Count, 1).End(xlUp).row  '変数Ｎ・・・最終行の数値を格納
+
+
+   For S = 1 To N
+
+       If .Range("A" & S).Value = "" Then
+        GoTo AA
+       Else
+      .Range("A" & S & ":" & "M" & S).Borders.LineStyle = xlContinuous
+       End If
+   Next S
+
+AA:
+
+ End With
+
+End Sub
+
+
+
+'■■■■■■■■■■■■　防除集計表作成　■■■■■■■■■■■■■■■
+
+Sub 防除集計表作成()  '新シートの作成
+
+   Dim NewWS As Worksheet   'ワークシートオブジェクトの定義
+   Dim rw As Integer        'syukeiから行コピーを実行する際の行変数
+   Dim hmrw As Integer       '引受面積シートの行変数
+
+
+Set NewWS = Worksheets.Add    'シート追加
+   NewWS.Name = "防除集計表" 'シート名変更
+
+    With Sheets("防除集計表")
+
+    .Rows.RowHeight = 14.5    '行の高さ設定
+    .Columns.ColumnWidth = 2.8  '列の幅設定
+    .Rows(2).RowHeight = 23.25  'タイトル行の幅設定
+
+'        For rw = 61 To 70 'syukeiシートの２行目から11行目までの書式を防除集計表シートにコピー
+'         Sheets("MENU").Rows(rw).Copy .Rows(rw - 59)
+           'On Error Resume Next
+'        Next rw
+
+    End With
+
+End Sub
+
+
+Sub 防除集計表データ抽出()
+
+
+'■■■■■■■■■■■■　データ作成　■■■■■■■■■■■■■■■
+
+   Dim hmrw As Integer '引受面積一覧データ行の数値
+   Dim bi As Integer '防除集計表データ行の数値
+   Dim N As Integer   '最終データ行の数値
+   Dim rw As Integer  '行の変数
+   Dim ha As Long  '面積
+   Dim mny As Long '金額
+
+
+
+With Sheets("防除集計表")
+
+   N = Sheets("引受面積一覧").Cells(Rows.Count, 1).End(xlUp).row  '最終データ行の数値を格納
+   tanka = Sheets("MENU").Cells(10, 11).Value
+
+            For rw = 61 To 70    '1ページ目の行
+           Sheets("MENU").Rows(rw).Copy .Rows(rw - 59)
+           Next rw
+           .Cells(11, 30) = Sheets("引受面積一覧").Cells(2, 11).Value '★共済番号
+'            .Cells(9, 3) = Sheets("引受面積一覧").Cells(2, 11).Value   '★共済番号
+
+
+   bi = 0    '防除集計表の開始行番号を指定（最初のみ指定）
+'    ans = .Cells(bi + 13, 30).Value = .Cells(bi + 12, 30).Value '★共済番号
+   .Cells(12, 30).Value = Sheets("引受面積一覧").Cells(3, 11).Value '★欄外共済番号
+
+
+      For hmrw = 2 To N
+
+   If .Cells(bi + 13, 30).Value = .Cells(bi + 12, 30).Value Then
+'    If ans Then
+ GoTo AA
+
+ Else
+       .Cells(bi + 5, 6) = Sheets("引受面積一覧").Cells(hmrw, 2).Value                       '集落名
+       .Cells(bi + 7, 7) = Sheets("引受面積一覧").Cells(hmrw, 3).Value '氏名
+       .Cells(bi + 9, 3) = Sheets("引受面積一覧").Cells(hmrw, 11).Value '★共済番号
+       .Cells(bi + 8, 21).NumberFormat = "@"                                 'プロパティに文字を指定
+       .Cells(bi + 8, 21) = Sheets("引受面積一覧").Cells(hmrw, 5) & " － " & Sheets("引受面積一覧").Cells(hmrw, 6) '集落コード＆農家番号
+
+AA:
+           Sheets("MENU").Rows(70).Copy .Rows(bi + 12)
+           .Cells(bi + 11, 30) = Sheets("引受面積一覧").Cells(hmrw, 11).Value '★共済番号
+           .Cells(bi + 11, 3) = Sheets("引受面積一覧").Cells(hmrw, 7).Value '耕地番号
+           .Cells(bi + 11, 6) = Sheets("引受面積一覧").Cells(hmrw, 8).Value '地名地番
+           .Cells(bi + 11, 17) = Sheets("引受面積一覧").Cells(hmrw, 10).Value '防除面積
+           .Cells(bi + 11, 21).NumberFormat = "#,##0"                       'プロパティに通貨を指定
+           .Cells(bi + 11, 21) = Sheets("引受面積一覧").Cells(hmrw, 10).Value * tanka '防除金額算出
+           .Cells(bi + 12, 30).Value = Sheets("引受面積一覧").Cells(hmrw + 1, 11).Value '★欄外共済番号
+
+ End If
+
+           If .Cells(bi + 12, 30).Value = .Cells(bi + 11, 30).Value Then 'もし共済番号が上の行と同じだったら
+           bi = bi + 1
+
+           Else
+           Sheets("MENU").Rows(111).Copy .Rows(bi + 12)
+           .Rows(bi + 13).PageBreak = xlPageBreakManual
+           bi = .Cells(Rows.Count, 3).End(xlUp).row
+
+           '----------------------------------------------
+           '  合計　防除面積　＆　金額
+           '----------------------------------------------
+           ha = 0
+           For rw = bi - 1 To 1 Step -1
+           If .Cells(rw, 30).Value = Empty Then
+           Exit For
+           Else
+               ha = ha + .Cells(rw, 17).Value
+'                 .Cells(bi, 17).Value = ha
+           End If
+           Next
+               .Cells(bi, 17).NumberFormat = "#,##0"     'プロパティに通貨を指定
+              .Cells(bi, 17).Value = ha
+
+            mny = 0
+           For rw = bi - 1 To 1 Step -1
+           If .Cells(rw, 30).Value = Empty Then
+           Exit For
+           Else
+               mny = mny + .Cells(rw, 21).Value
+           End If
+           Next
+               .Cells(bi, 21).NumberFormat = "#,##0"     'プロパティに通貨を指定
+                .Cells(bi, 21).Value = mny
+
+
+
+
+
+           For rw = 61 To 70
+           Sheets("MENU").Rows(rw).Copy .Rows(bi + rw - 59)
+           Next rw
+           .Cells(bi + 12, 30).Value = Sheets("引受面積一覧").Cells(hmrw, 11).Value '★欄外共済番号
+
+           End If
+
+
+
+       Next hmrw
+
+           .Columns(30).Delete
+           For i = bi + 12 To bi + 1 Step -1
+           .Rows(i).Delete
+           Next
+
+
+
+    MsgBox "終了しました", vbOKOnly
+
+  End With
+
+
+End Sub
+
+
+
+'■■■■■■■■■■■■　防除集計表作成　■■■■■■■■■■■■■■■
+
+
+
+Private Sub 防除地番入力_Click()
+ With Sheets("クエリ1")
+ On Error GoTo ZZ
+   .Columns(1).Hidden = True
+   .Columns(4).Hidden = True
+   .Columns(5).Hidden = True
+   .Columns(6).Hidden = True
+   .Columns(11).Hidden = True
+   .Columns(12).Hidden = True
+   .Columns(13).Hidden = True
+    Sheets("クエリ1").Protect
+
+ZZ:
+   .Select
+End With
+End Sub
+
+
+Private Sub 散布通知ボタン_Click()
+
+   Dim hmrw As Integer '引受面積一覧データ行の数値
+   Dim bi As Integer '防除集計表データ行の数値
+   Dim N As Integer   '最終データ行の数値
+   Dim rw As Integer  '行の変数
+   Dim ha As Long  '面積
+
+
+Set NewWS = Worksheets.Add    'シート追加
+   NewWS.Name = "防除実施通知" 'シート名変更
+
+    With Sheets("防除実施通知")
+
+    .Rows.RowHeight = 14.5    '行の高さ設定
+    .Columns.ColumnWidth = 3#   '列の幅設定
+'     .Rows(2).RowHeight = 23.25  'タイトル行の幅設定
+
+'        For rw = 61 To 70 'syukeiシートの２行目から11行目までの書式を防除集計表シートにコピー
+'         Sheets("MENU").Rows(rw).Copy .Rows(rw - 59)
+           'On Error Resume Next
+'        Next rw
+
+
+   N = Sheets("引受面積一覧").Cells(Rows.Count, 1).End(xlUp).row  '最終データ行の数値を格納
+
+            For rw = 114 To 138    '1ページ目の行
+           Sheets("MENU").Rows(rw).Copy .Rows(rw - 112)
+           Next rw
+           .Cells(2, 4) = Sheets("引受面積一覧").Cells(2, 12).Value '★郵便番号
+           .Cells(3, 3) = Sheets("引受面積一覧").Cells(2, 13).Value '★住所
+           .Cells(4, 3) = Sheets("引受面積一覧").Cells(2, 3).Value '★氏名
+           .Cells(25, 2) = Sheets("引受面積一覧").Cells(2, 11).Value '★共済番号
+           .Cells(27, 30) = Sheets("引受面積一覧").Cells(2, 11).Value '★共済番号
+           .Cells(24, 20).NumberFormat = "@"                                 'プロパティに文字を指定
+           .Cells(24, 20) = Sheets("引受面積一覧").Cells(2, 5) & " － " & Sheets("引受面積一覧").Cells(2, 6) '集落コード＆農家番号
+
+
+   bi = 0    '防除集計表の開始行番号を指定（最初のみ指定）
+'    ans = .Cells(bi + 13, 30).Value = .Cells(bi + 12, 30).Value '★共済番号
+'    .Cells(28, 30).Value = Sheets("引受面積一覧").Cells(3, 11).Value '★欄外共済番号
+
+
+      For hmrw = 2 To N
+
+   If .Cells(bi + 27, 30).Value = .Cells(bi + 26, 30).Value Then
+'    If ans Then
+ GoTo AA
+
+ Else
+       .Cells(bi + 2, 4) = Sheets("引受面積一覧").Cells(hmrw, 12).Value '郵便番号
+       .Cells(bi + 3, 3) = Sheets("引受面積一覧").Cells(hmrw, 13).Value '住所
+       .Cells(bi + 4, 3) = Sheets("引受面積一覧").Cells(hmrw, 3).Value '★氏名
+       .Cells(bi + 25, 2) = Sheets("引受面積一覧").Cells(hmrw, 11).Value '★共済番号
+       .Cells(bi + 24, 20).NumberFormat = "@"                                 'プロパティに文字を指定
+       .Cells(bi + 24, 20) = Sheets("引受面積一覧").Cells(hmrw, 5) & " － " & Sheets("引受面積一覧").Cells(hmrw, 6) '集落コード＆農家番号
+
+AA:
+           Sheets("MENU").Rows(139).Copy .Rows(bi + 27)
+           .Cells(bi + 27, 30) = Sheets("引受面積一覧").Cells(hmrw, 11).Value '★共済番号
+           .Cells(bi + 27, 2) = Sheets("引受面積一覧").Cells(hmrw, 7).Value '耕地番号
+           .Cells(bi + 27, 5) = Sheets("引受面積一覧").Cells(hmrw, 8).Value '地名地番
+           .Cells(bi + 27, 16) = Sheets("引受面積一覧").Cells(hmrw, 10).Value '防除面積
+'            .Cells(bi + 27, 21).NumberFormat = "#,##0"                       'プロパティに通貨を指定
+'            .Cells(bi + 27, 21) = Sheets("引受面積一覧").Cells(hmrw, 10).Value * tanka '防除金額算出
+           .Cells(bi + 28, 30).Value = Sheets("引受面積一覧").Cells(hmrw + 1, 11).Value '★欄外共済番号
+
+ End If
+
+           If .Cells(bi + 28, 30).Value = .Cells(bi + 27, 30).Value Then 'もし共済番号が上の行と同じだったら
+           bi = bi + 1
+
+           Else
+           Sheets("MENU").Rows(140).Copy .Rows(bi + 28)
+           Sheets("MENU").Rows(141).Copy .Rows(bi + 29)
+           .Cells(bi + 29, 16) = Sheets("引受面積一覧").Cells(hmrw, 3).Value '氏名
+           .Rows(bi + 30).PageBreak = xlPageBreakManual
+           bi = .Cells(Rows.Count, 2).End(xlUp).row
+
+           '----------------------------------------------
+           '  合計　防除面積　＆　金額
+           '----------------------------------------------
+           ha = 0
+           For rw = bi - 1 To 1 Step -1
+           If .Cells(rw, 30).Value = Empty Then
+           Exit For
+           Else
+               ha = ha + .Cells(rw, 16).Value
+'                 .Cells(bi, 16).Value = ha
+           End If
+           Next
+               .Cells(bi, 16).NumberFormat = "#,##0"     'プロパティに桁を指定
+              .Cells(bi, 16).Value = ha
+
+
+           For rw = 114 To 139
+           Sheets("MENU").Rows(rw).Copy .Rows(bi + rw - 112)
+           Next rw
+           .Cells(bi + 27, 30).Value = Sheets("引受面積一覧").Cells(hmrw, 11).Value '★欄外共済番号
+
+           End If
+
+
+
+       Next hmrw
+
+           .Columns(30).Delete
+           For i = bi + 27 To bi + 2 Step -1
+           .Rows(i).Delete
+           Next
+
+
+
+    MsgBox "終了しました", vbOKOnly
+
+  End With
+
+
+End Sub
