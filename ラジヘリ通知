@@ -120,124 +120,85 @@ End Sub
 
 
 
+'=============== 防除集計表データ抽出 ===============
 Sub 防除集計表データ抽出()
+    Dim wsDst As Worksheet: Set wsDst = Sheets("防除集計表")
+    Dim wsSrc As Worksheet: Set wsSrc = Sheets("引受面積一覧")
+    Dim wsMenu As Worksheet: Set wsMenu = Sheets("MENU")
 
+    Dim hmrw As Long, bi As Long, rw As Long
+    Dim ha As Double, mny As Double, N As Long, tanka As Double
+    tanka = wsMenu.Cells(10, 11).Value
+    N = wsSrc.Cells(wsSrc.Rows.Count, 1).End(xlUp).Row
 
-'■■■■■■■■■■■■　データ作成　■■■■■■■■■■■■■■■
+    ' 初期レイアウト設定
+    For rw = 61 To 70
+        wsMenu.Rows(rw).Copy wsDst.Rows(rw - 59)
+    Next rw
+    wsDst.Cells(11, 30).Value = wsSrc.Cells(2, 11).Value
+    wsDst.Cells(12, 30).Value = wsSrc.Cells(3, 11).Value
 
-   Dim hmrw As Integer '引受面積一覧データ行の数値
-   Dim bi As Integer '防除集計表データ行の数値
-   Dim N As Integer   '最終データ行の数値
-   Dim rw As Integer  '行の変数
-   Dim ha As Long  '面積
-   Dim mny As Long '金額
+    bi = 0
 
+    For hmrw = 2 To N
+        If wsDst.Cells(bi + 13, 30).Value <> wsDst.Cells(bi + 12, 30).Value Then
+            With wsDst
+                .Cells(bi + 5, 6).Value = wsSrc.Cells(hmrw, 2).Value
+                .Cells(bi + 7, 7).Value = wsSrc.Cells(hmrw, 3).Value
+                .Cells(bi + 9, 3).Value = wsSrc.Cells(hmrw, 11).Value
+                .Cells(bi + 8, 21).NumberFormat = "@"
+                .Cells(bi + 8, 21).Value = wsSrc.Cells(hmrw, 5).Value & " － " & wsSrc.Cells(hmrw, 6).Value
+            End With
+        End If
 
+        wsMenu.Rows(70).Copy wsDst.Rows(bi + 12)
+        With wsDst
+            .Cells(bi + 11, 30).Value = wsSrc.Cells(hmrw, 11).Value
+            .Cells(bi + 11, 3).Value = wsSrc.Cells(hmrw, 7).Value
+            .Cells(bi + 11, 6).Value = wsSrc.Cells(hmrw, 8).Value
+            .Cells(bi + 11, 17).Value = wsSrc.Cells(hmrw, 10).Value
+            .Cells(bi + 11, 21).NumberFormat = "#,##0"
+            .Cells(bi + 11, 21).Value = wsSrc.Cells(hmrw, 10).Value * tanka
+            .Cells(bi + 12, 30).Value = wsSrc.Cells(hmrw + 1, 11).Value
+        End With
 
-With Sheets("防除集計表")
+        If wsDst.Cells(bi + 12, 30).Value = wsDst.Cells(bi + 11, 30).Value Then
+            bi = bi + 1
+        Else
+            wsMenu.Rows(111).Copy wsDst.Rows(bi + 12)
+            wsDst.Rows(bi + 13).PageBreak = xlPageBreakManual
+            bi = wsDst.Cells(wsDst.Rows.Count, 3).End(xlUp).Row
 
-   N = Sheets("引受面積一覧").Cells(Rows.Count, 1).End(xlUp).row  '最終データ行の数値を格納
-   tanka = Sheets("MENU").Cells(10, 11).Value
+            ha = 0: mny = 0
+            For rw = bi - 1 To 1 Step -1
+                If wsDst.Cells(rw, 30).Value = "" Then Exit For
+                ha = ha + Val(wsDst.Cells(rw, 17).Value)
+                mny = mny + Val(wsDst.Cells(rw, 21).Value)
+            Next rw
 
-            For rw = 61 To 70    '1ページ目の行
-           Sheets("MENU").Rows(rw).Copy .Rows(rw - 59)
-           Next rw
-           .Cells(11, 30) = Sheets("引受面積一覧").Cells(2, 11).Value '★共済番号
-'            .Cells(9, 3) = Sheets("引受面積一覧").Cells(2, 11).Value   '★共済番号
-
-
-   bi = 0    '防除集計表の開始行番号を指定（最初のみ指定）
-'    ans = .Cells(bi + 13, 30).Value = .Cells(bi + 12, 30).Value '★共済番号
-   .Cells(12, 30).Value = Sheets("引受面積一覧").Cells(3, 11).Value '★欄外共済番号
-
-
-      For hmrw = 2 To N
-
-   If .Cells(bi + 13, 30).Value = .Cells(bi + 12, 30).Value Then
-'    If ans Then
- GoTo AA
-
- Else
-       .Cells(bi + 5, 6) = Sheets("引受面積一覧").Cells(hmrw, 2).Value                       '集落名
-       .Cells(bi + 7, 7) = Sheets("引受面積一覧").Cells(hmrw, 3).Value '氏名
-       .Cells(bi + 9, 3) = Sheets("引受面積一覧").Cells(hmrw, 11).Value '★共済番号
-       .Cells(bi + 8, 21).NumberFormat = "@"                                 'プロパティに文字を指定
-       .Cells(bi + 8, 21) = Sheets("引受面積一覧").Cells(hmrw, 5) & " － " & Sheets("引受面積一覧").Cells(hmrw, 6) '集落コード＆農家番号
-
-AA:
-           Sheets("MENU").Rows(70).Copy .Rows(bi + 12)
-           .Cells(bi + 11, 30) = Sheets("引受面積一覧").Cells(hmrw, 11).Value '★共済番号
-           .Cells(bi + 11, 3) = Sheets("引受面積一覧").Cells(hmrw, 7).Value '耕地番号
-           .Cells(bi + 11, 6) = Sheets("引受面積一覧").Cells(hmrw, 8).Value '地名地番
-           .Cells(bi + 11, 17) = Sheets("引受面積一覧").Cells(hmrw, 10).Value '防除面積
-           .Cells(bi + 11, 21).NumberFormat = "#,##0"                       'プロパティに通貨を指定
-           .Cells(bi + 11, 21) = Sheets("引受面積一覧").Cells(hmrw, 10).Value * tanka '防除金額算出
-           .Cells(bi + 12, 30).Value = Sheets("引受面積一覧").Cells(hmrw + 1, 11).Value '★欄外共済番号
-
- End If
-
-           If .Cells(bi + 12, 30).Value = .Cells(bi + 11, 30).Value Then 'もし共済番号が上の行と同じだったら
-           bi = bi + 1
-
-           Else
-           Sheets("MENU").Rows(111).Copy .Rows(bi + 12)
-           .Rows(bi + 13).PageBreak = xlPageBreakManual
-           bi = .Cells(Rows.Count, 3).End(xlUp).row
-
-           '----------------------------------------------
-           '  合計　防除面積　＆　金額
-           '----------------------------------------------
-           ha = 0
-           For rw = bi - 1 To 1 Step -1
-           If .Cells(rw, 30).Value = Empty Then
-           Exit For
-           Else
-               ha = ha + .Cells(rw, 17).Value
-'                 .Cells(bi, 17).Value = ha
-           End If
-           Next
-               .Cells(bi, 17).NumberFormat = "#,##0"     'プロパティに通貨を指定
-              .Cells(bi, 17).Value = ha
-
-            mny = 0
-           For rw = bi - 1 To 1 Step -1
-           If .Cells(rw, 30).Value = Empty Then
-           Exit For
-           Else
-               mny = mny + .Cells(rw, 21).Value
-           End If
-           Next
-               .Cells(bi, 21).NumberFormat = "#,##0"     'プロパティに通貨を指定
+            With wsDst
+                .Cells(bi, 17).NumberFormat = "#,##0"
+                .Cells(bi, 17).Value = ha
+                .Cells(bi, 21).NumberFormat = "#,##0"
                 .Cells(bi, 21).Value = mny
+            End With
 
+            For rw = 61 To 70
+                wsMenu.Rows(rw).Copy wsDst.Rows(bi + rw - 59)
+            Next rw
+            wsDst.Cells(bi + 12, 30).Value = wsSrc.Cells(hmrw, 11).Value
+        End If
+    Next hmrw
 
-
-
-
-           For rw = 61 To 70
-           Sheets("MENU").Rows(rw).Copy .Rows(bi + rw - 59)
-           Next rw
-           .Cells(bi + 12, 30).Value = Sheets("引受面積一覧").Cells(hmrw, 11).Value '★欄外共済番号
-
-           End If
-
-
-
-       Next hmrw
-
-           .Columns(30).Delete
-           For i = bi + 12 To bi + 1 Step -1
-           .Rows(i).Delete
-           Next
-
-
+    ' 後処理
+    wsDst.Columns(30).Delete
+    For rw = bi + 12 To bi + 1 Step -1
+        wsDst.Rows(rw).Delete
+    Next rw
 
     MsgBox "終了しました", vbOKOnly
-
-  End With
-
-
 End Sub
+
 
 
 
